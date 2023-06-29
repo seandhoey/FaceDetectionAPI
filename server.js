@@ -1,15 +1,17 @@
 // Purposely using deprecated package "bcrypt-nodejs" for simplicity
 import bcrypt from 'bcrypt-nodejs';
 import express from 'express';
+import cors from 'cors';
 
-const VERBOSE = false;
-const PORT = 3000;
+const TESTING = true;
+const PORT = 3001;
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+if(TESTING) app.use(cors());
 app.listen(PORT, () => {
-  console.log("Server is listening on port 3000")
+  console.log("Server is listening on port " + PORT);
 });
 
 // TODO replace with real postgresql
@@ -36,7 +38,7 @@ const tempDatabase = {
 
 // Verbose logger for testing
 app.use((req, res, next) => {
-  if (VERBOSE) {
+  if (TESTING) {
     console.log("___________________________________________________________________");
     console.log(">>>I heard a client request");
     console.log("\n>>>headers", req.headers);
@@ -49,7 +51,8 @@ app.use((req, res, next) => {
 
 // Placeholder for testing
 app.get('/', (req, res) => {
-  res.status(200).send('test');
+  res.status(200).send(tempDatabase.users[0]);
+  // res.status(200).send('test');
 });
 
 // Get specific user based on ID
@@ -84,16 +87,16 @@ app.put('/detect', (req, res) => {
 // Log In page submission
 // Use Post so that the data is in encrypted json over https
 app.post('/signin', (req, res) => {
-  console.log(req.body);
-  // Load hash from db
+  console.log("\n>>>body", req.body);
+  // TODO Load hash from db
   // TODO implement bcrypt
-  bcrypt.compare("bacon", hash, function (err, res) {
-    // res = true
-  });
-  // TODO change to database
+  // bcrypt.compare("bacon", hash, function (err, res) {
+  //   // res = true
+  // });
+  // TODO change to database, iterate over list
   if (req.body.email === tempDatabase.users[0].email
     && req.body.password === tempDatabase.users[0].password) {
-    res.json('Good credentials');
+      res.status(200).json(tempDatabase.users[0]);
   }
   else {
     res.status(400).json('Bad credentials');
@@ -104,13 +107,13 @@ app.post('/signin', (req, res) => {
 app.post('/register', (req, res) => {
   try {
     // Should not actually log the password anywhere
-    console.log(req.body);
+    console.log("\n>>>body", req.body);
     const { email, name, password } = req.body;
     // TODO implement bcrypt
-    bcrypt.hash(password, null, null, function (err, hash) {
-      console.log(hash);
-      // Store hash in db
-    });
+    // bcrypt.hash(password, null, null, function (err, hash) {
+    //   console.log(hash);
+    //   // TODO Store hash in db
+    // });
     tempDatabase.users.push({
       id: 987,
       user: name,
@@ -119,7 +122,7 @@ app.post('/register', (req, res) => {
       detectCount: 0,
       joined: new Date()
     });
-    res.json(tempDatabase.users[tempDatabase.users.length - 1]);
+    res.status(200).json(tempDatabase.users[tempDatabase.users.length - 1]);
   }
   catch (error) {
     res.status(400).json('Registration failure');
