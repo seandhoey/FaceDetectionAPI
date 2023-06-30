@@ -71,11 +71,11 @@ app.get('/profile/:id', (req, res) => {
 
 // Update specific users' detectCount
 app.put('/detect', (req, res) => {
+  console.log("\n>>>body", req.body);
   const { id } = req.body;
-  console.log(id);
   let found = false;
   tempDatabase.users.forEach(user => {
-    if (user.id.toString() === id) {
+    if (user.id === id) {
       found = true;
       user.detectCount++;
       return res.status(200).json(user.detectCount);
