@@ -2,6 +2,7 @@
 import bcrypt from 'bcrypt-nodejs';
 import express from 'express';
 import cors from 'cors';
+import knex from 'knex';
 
 const TESTING = true;
 const PORT = 3001;
@@ -13,6 +14,21 @@ if(TESTING) app.use(cors());
 app.listen(PORT, () => {
   console.log("Server is listening on port " + PORT);
 });
+
+const db = knex({
+  client: 'pg',
+  connection: {
+    host : '127.0.0.1', //localhost
+    user : 'postgres', //default user
+    port: 5432, //default port
+    password : 'brainiac', //should this be here in plain text?
+    database : 'facedetect'
+  }
+});
+
+// TODO test
+var result = db.select('id','name').from('users');
+console.log('users', result);
 
 // TODO replace with real postgresql
 const tempDatabase = {
