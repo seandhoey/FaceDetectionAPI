@@ -1,12 +1,12 @@
-// Purposely using deprecated package "bcrypt-nodejs" for simplicity
-import bcrypt from 'bcrypt-nodejs';
+import bcrypt from 'bcrypt-nodejs'; // Purposely using deprecated package for simplicity
 import express from 'express';
 import cors from 'cors';
 import knex from 'knex';
+import userEndpoints from './endpoints/userEndpoints.js'
 
+// Server Configuration
 const TESTING = true;
 const PORT = 3001;
-
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -15,6 +15,7 @@ app.listen(PORT, () => {
   console.log("Server is listening on port " + PORT);
 });
 
+// Database Connection
 const db = knex({
   client: 'pg',
   connection: {
@@ -39,114 +40,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Placeholder for testing
-app.get('/', (req, res) => {
-  db.select('name', 'email').from('users').then(users => {
-    console.log("\n>>>EXISTING USERS:", users);
-    res.status(200).send(users);
-  });
-});
+// User Endpoints
+app.get('/', (req, res) => { userEndpoints.getAllUsers(req, res, db); });
 
-// Get specific user based on ID.
-// Website does not use this endpoint.
-app.get('/profile/:id', (req, res) => {
-  const { id } = req.params;
+app.get('/profile/:id', (req, res) => { userEndpoints.getProfileByID (req, res, db); });
 
-  db('users')
-    .select('*')
-    .where({ id: id })
-    .then(user => {
-      if (user.length === 0) res.status(404).json('No user found')
-      else res.status(200).json(user[0]);
-    })
-    .catch(err => {
-      console.log("\n>>>ERROR: ", err);
-      res.status(404).json('Query error')
-    });
-});
+app.put('/detect', (req, res) => { userEndpoints.putIncrementDetect(req, res, db); });
 
-// Update specific users' detectCount
-app.put('/detect', (req, res) => {
-  console.log("\n>>>BODY: ", req.body);
-  const { id } = req.body;
+app.post('/signin', (req, res) => { userEndpoints.postAuthenticateUser(req, res, db, bcrypt); });
 
-  db('users')
-    .increment('entries', 1)
-    .where({ id: id })
-    .returning('entries')
-    .then(entries => {
-      if (entries.length === 0) res.status(404).json('No user found')
-      else res.status(200).json(entries[0].entries);
-    })
-    .catch(err => {
-      console.log("\n>>>ERROR: ", err);
-      res.status(404).json('Query error')
-    });
-});
-
-// Log In page submission
-// Use Post so that the data is in encrypted json over https
-app.post('/signin', (req, res) => {
-  console.log("\n>>>BODY: ", req.body);
-  const { email, password } = req.body;
-  const hash = bcrypt.hashSync(password);
-
-  db('users')
-    .select('users.*', 'login.hash')
-    .join('login', 'users.id', '=', 'login.user_id')
-    .where('users.email', '=', email)
-    .then(user => {
-      // Need bcrypt library to compare the hash
-      const isMatch = bcrypt.compareSync(password, user[0].hash)
-      if(isMatch){
-        // Send the user info back without the hash
-        delete user[0].hash;
-        res.status(200).json(user[0]);
-      }
-      else res.status(400).json('Login failure');
-    })
-    .catch(err => {
-      console.log("\n>>>ERROR", err);
-      res.status(400).json('Login failure');
-    })
-})
-
-// Register page submission
-app.post('/register', (req, res) => {
-  // Should not actually log the password anywhere
-  console.log("\n>>>BODY: ", req.body);
-  const { email, name, password } = req.body;
-  const hash = bcrypt.hashSync(password);
-
-  // Returns a select of the successful insert for us to send to client
-  // Inserts into users and login tables within one transaction
-  // If the entire commit fails, changes roll back and send error.
-  db.transaction(trx => {
-    trx.insert({
-      name: name,
-      email: email,
-      joined: new Date()
-    })
-      .into('users')
-      .returning('id')
-      .then(id => {
-        return (
-          trx('login')
-            .insert({
-              hash: hash,
-              user_id: id[0].id
-            })
-        )
-      })
-      .then(trx.commit)
-      .then(dbres => {
-        console.log("\n>>>COMMIT RESPONSE: ", dbres);
-        res.status(200).json("Registered");
-      })
-      .catch(err => {
-        console.log("\n>>>ERROR: ", err);
-        trx.rollback;
-        res.status(400).json('Registration failure');
-      })
-  });
-})
+app.post('/register', (req, res) => { userEndpoints.postRegisterUser(req, res, db, bcrypt); });
