@@ -10,7 +10,7 @@ const PORT = 3001;
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-if(TESTING) app.use(cors());
+if (TESTING) app.use(cors());
 app.listen(PORT, () => {
   console.log("Server is listening on port " + PORT);
 });
@@ -18,129 +18,135 @@ app.listen(PORT, () => {
 const db = knex({
   client: 'pg',
   connection: {
-    host : '127.0.0.1', //localhost
-    user : 'postgres', //default user
+    host: '127.0.0.1', //localhost
+    user: 'postgres', //default user
     port: 5432, //default port
-    password : 'brainiac', //should this be here in plain text?
-    database : 'facedetect'
+    password: 'brainiac', //should this be here in plain text?
+    database: 'facedetect'
   }
 });
-
-// TODO test
-var result = db.select('id','name').from('users');
-console.log('users', result);
-
-// TODO replace with real postgresql
-const tempDatabase = {
-  users: [
-    {
-      id: 321,
-      name: "Anthony",
-      email: "a@test.com",
-      password: "123",
-      detectCount: 0,
-      joined: new Date()
-    },
-    {
-      id: 654,
-      name: "Bob",
-      email: "b@test.com",
-      password: "456",
-      detectCount: 0,
-      joined: new Date()
-    },
-  ]
-};
 
 // Verbose logger for testing
 app.use((req, res, next) => {
   if (TESTING) {
     console.log("___________________________________________________________________");
     console.log(">>>I heard a client request");
-    console.log("\n>>>headers", req.headers);
-    console.log("\n>>>method", req.method);
-    console.log("\n>>>url", req.url);
-    console.log("\n>>>query", req.query);
+    console.log("\n>>>HEADERS: ", req.headers);
+    console.log("\n>>>METHOD: ", req.method);
+    console.log("\n>>>URL: ", req.url);
+    console.log("\n>>>QUERY: ", req.query);
   }
   next();
 });
 
 // Placeholder for testing
 app.get('/', (req, res) => {
-  res.status(200).send(tempDatabase.users[0]);
-  // res.status(200).send('test');
+  db.select('name', 'email').from('users').then(users => {
+    console.log("\n>>>EXISTING USERS:", users);
+    res.status(200).send(users);
+  });
 });
 
-// Get specific user based on ID
+// Get specific user based on ID.
+// Website does not use this endpoint.
 app.get('/profile/:id', (req, res) => {
   const { id } = req.params;
-  console.log(id);
-  let found = false;
-  tempDatabase.users.forEach(user => {
-    if (user.id.toString() === id) {
-      found = true;
-      return res.status(200).json(user);
-    }
-  });
-  if (!found) res.status(404).json('No user found');
+
+  db('users')
+    .select('*')
+    .where({ id: id })
+    .then(user => {
+      if (user.length === 0) res.status(404).json('No user found')
+      else res.status(200).json(user[0]);
+    })
+    .catch(err => {
+      console.log("\n>>>ERROR: ", err);
+      res.status(404).json('Query error')
+    });
 });
 
 // Update specific users' detectCount
 app.put('/detect', (req, res) => {
-  console.log("\n>>>body", req.body);
+  console.log("\n>>>BODY: ", req.body);
   const { id } = req.body;
-  let found = false;
-  tempDatabase.users.forEach(user => {
-    if (user.id === id) {
-      found = true;
-      user.detectCount++;
-      return res.status(200).json(user.detectCount);
-    }
-  });
-  if (!found) res.status(404).json('No user found');
+
+  db('users')
+    .increment('entries', 1)
+    .where({ id: id })
+    .returning('entries')
+    .then(entries => {
+      if (entries.length === 0) res.status(404).json('No user found')
+      else res.status(200).json(entries[0].entries);
+    })
+    .catch(err => {
+      console.log("\n>>>ERROR: ", err);
+      res.status(404).json('Query error')
+    });
 });
 
 // Log In page submission
 // Use Post so that the data is in encrypted json over https
 app.post('/signin', (req, res) => {
-  console.log("\n>>>body", req.body);
-  // TODO Load hash from db
-  // TODO implement bcrypt
-  // bcrypt.compare("bacon", hash, function (err, res) {
-  //   // res = true
-  // });
-  // TODO change to database, iterate over list
-  if (req.body.email === tempDatabase.users[0].email
-    && req.body.password === tempDatabase.users[0].password) {
-      res.status(200).json(tempDatabase.users[0]);
-  }
-  else {
-    res.status(400).json('Bad credentials');
-  }
-});
+  console.log("\n>>>BODY: ", req.body);
+  const { email, password } = req.body;
+  const hash = bcrypt.hashSync(password);
+
+  db('users')
+    .select('users.*', 'login.hash')
+    .join('login', 'users.id', '=', 'login.user_id')
+    .where('users.email', '=', email)
+    .then(user => {
+      // Need bcrypt library to compare the hash
+      const isMatch = bcrypt.compareSync(password, user[0].hash)
+      if(isMatch){
+        // Send the user info back without the hash
+        delete user[0].hash;
+        res.status(200).json(user[0]);
+      }
+      else res.status(400).json('Login failure');
+    })
+    .catch(err => {
+      console.log("\n>>>ERROR", err);
+      res.status(400).json('Login failure');
+    })
+})
 
 // Register page submission
 app.post('/register', (req, res) => {
-  try {
-    // Should not actually log the password anywhere
-    console.log("\n>>>body", req.body);
-    const { email, name, password } = req.body;
-    // TODO implement bcrypt
-    // bcrypt.hash(password, null, null, function (err, hash) {
-    //   console.log(hash);
-    //   // TODO Store hash in db
-    // });
-    tempDatabase.users.push({
-      id: 987,
-      user: name,
+  // Should not actually log the password anywhere
+  console.log("\n>>>BODY: ", req.body);
+  const { email, name, password } = req.body;
+  const hash = bcrypt.hashSync(password);
+
+  // Returns a select of the successful insert for us to send to client
+  // Inserts into users and login tables within one transaction
+  // If the entire commit fails, changes roll back and send error.
+  db.transaction(trx => {
+    trx.insert({
+      name: name,
       email: email,
-      password: password,
-      detectCount: 0,
       joined: new Date()
-    });
-    res.status(200).json(tempDatabase.users[tempDatabase.users.length - 1]);
-  }
-  catch (error) {
-    res.status(400).json('Registration failure');
-  }
-});
+    })
+      .into('users')
+      .returning('id')
+      .then(id => {
+        return (
+          trx('login')
+            .insert({
+              hash: hash,
+              user_id: id[0].id
+            })
+        )
+      })
+      .then(trx.commit)
+      .then(dbres => {
+        console.log("\n>>>COMMIT RESPONSE: ", dbres);
+        res.status(200).json("Registered");
+      })
+      .catch(err => {
+        console.log("\n>>>ERROR: ", err);
+        trx.rollback;
+        res.status(400).json('Registration failure');
+      })
+  });
+})
