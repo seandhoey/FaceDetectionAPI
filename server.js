@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import knex from 'knex';
 import userEndpoints from './endpoints/userEndpoints.js'
+import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
 
 // Server Configuration
 const TESTING = true;
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
     console.log("\n>>>URL: ", req.url);
     console.log("\n>>>QUERY: ", req.query);
   }
+  // Would do some SQL injection prevention here
   next();
 });
 
@@ -50,3 +52,6 @@ app.put('/detect', (req, res) => { userEndpoints.putIncrementDetect(req, res, db
 app.post('/signin', (req, res) => { userEndpoints.postAuthenticateUser(req, res, db, bcrypt); });
 
 app.post('/register', (req, res) => { userEndpoints.postRegisterUser(req, res, db, bcrypt); });
+
+// Clarifai Endpoints
+app.post('/facedetect', (req, res) => { clarifaiEndpoints.postClarifaiFaceDetection(req, res); });

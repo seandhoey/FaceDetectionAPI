@@ -11,6 +11,7 @@ export function getAllUsers(req, res, db) {
 // Get specific user based on ID.
 export function getProfileByID(req, res, db) {
   const { id } = req.params;
+
   db('users')
     .select('*')
     .where({ id: id })
@@ -28,6 +29,7 @@ export function getProfileByID(req, res, db) {
 export function putIncrementDetect(req, res, db) {
   console.log("\n>>>BODY: ", req.body);
   const { id } = req.body;
+
   db('users')
     .increment('entries', 1)
     .where({ id: id })
@@ -47,7 +49,7 @@ export function postAuthenticateUser(req, res, db, bcrypt) {
   // Use Post so that the data is in encrypted json over https
   console.log("\n>>>BODY: ", req.body);
   const { email, password } = req.body;
-  const hash = bcrypt.hashSync(password);
+
   db('users')
     .select('users.*', 'login.hash')
     .join('login', 'users.id', '=', 'login.user_id')
@@ -74,6 +76,11 @@ export function postRegisterUser(req, res, db, bcrypt) {
   console.log("\n>>>BODY: ", req.body);
   const { email, name, password } = req.body;
   const hash = bcrypt.hashSync(password);
+
+  // Ensure no empty fields
+  if(!email || !name || !password){
+    return res.status(400).json('Bad form submission');
+  }
 
   // Returns a select of the successful insert for us to send to client
   // Inserts into users and login tables within one transaction
