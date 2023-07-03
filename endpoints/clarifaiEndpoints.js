@@ -7,10 +7,7 @@ export async function postClarifaiFaceDetection(req, res) {
   const CLARIFAIURL = process.env.CLARIFAI_URL;
   const CLARIFAIREQUEST = generateClarifaiRequest(url);
   try {
-    console.log(CLARIFAIREQUEST.headers.Authorization);
-    console.log(CLARIFAIREQUEST.body);
     const response = await fetch(CLARIFAIURL, CLARIFAIREQUEST);
-    console.log('response', response);
     const jsonResponse = await response.json();
 
     // For all bounding boxes found in the json, convert them into calculated objects and put into array
@@ -20,6 +17,7 @@ export async function postClarifaiFaceDetection(req, res) {
     res.status(200).json(boundingBoxes);
   }
   catch (error) {
+    console.log(error);
     res.status(400).json('Clarifai API error');
   }
 }
