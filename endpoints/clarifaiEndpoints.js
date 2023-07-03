@@ -7,7 +7,8 @@ export async function postClarifaiFaceDetection(req, res) {
   const CLARIFAIURL = process.env.CLARIFAI_URL;
   const CLARIFAIREQUEST = generateClarifaiRequest(url);
   try {
-    console.log(CLARIFAIURL + "/n" + CLARIFAIREQUEST);
+    console.log(CLARIFAIREQUEST.headers.Authorization);
+    console.log(CLARIFAIREQUEST.body);
     const response = await fetch(CLARIFAIURL, CLARIFAIREQUEST);
     console.log('response', response);
     const jsonResponse = await response.json();
@@ -28,7 +29,6 @@ function generateClarifaiRequest(url) {
   const PAT_KEY = process.env.CLARIFAI_PATKEY;
   const USER_ID = process.env.CLARIFAI_USERID;
   const APP_ID = process.env.CLARIFAI_APPID;
-  console.log('appid', APP_ID);
 
   return {
     method: 'POST',
