@@ -4,10 +4,13 @@
 export async function postClarifaiFaceDetection(req, res) {
   console.log("\n>>>BODY: ", req.body);
   const { url, height, width } = req.body;
-  console.log('1: ', process.env.CLARIFAI_USERID);
   const CLARIFAIURL = process.env.CLARIFAI_URL;
+  console.log('user1', process.env.CLARIFAI_USERID)
   try {
+    console.log('url', CLARIFAIURL);
+    console.log('user2', process.env.CLARIFAI_USERID)
     const response = await fetch(CLARIFAIURL, generateClarifaiRequest(url));
+    console.log('response', response);
     const jsonResponse = await response.json();
 
     // For all bounding boxes found in the json, convert them into calculated objects and put into array
@@ -26,7 +29,6 @@ function generateClarifaiRequest(url) {
   const PAT_KEY = process.env.CLARIFAI_PATKEY;
   const USER_ID = process.env.CLARIFAI_USERID;
   const APP_ID = process.env.CLARIFAI_APPID;
-  console.log('2: ', USER_ID);
 
   return {
     method: 'POST',

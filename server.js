@@ -4,8 +4,10 @@ import cors from 'cors';
 import knex from 'knex';
 import userEndpoints from './endpoints/userEndpoints.js'
 import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
+import dotenv from 'dotenv'
 
 // Server Configuration
+dotenv.config();
 const PRODUCTION = process.env.PRODUCTION;
 // If a port is passed in, use that instead of 3001
 const PORT = process.env.PORT || 3001;
@@ -18,7 +20,7 @@ app.listen(PORT, () => {
 });
 
 // Database Connection
-const db = !PRODUCTION
+const db = (PRODUCTION == 0)
 ? knex({
   client: 'pg',
   connection: {
@@ -44,7 +46,7 @@ const db = !PRODUCTION
 
 // Verbose logger for testing
 app.use((req, res, next) => {
-  if (!PRODUCTION) {
+  if (PRODUCTION == 0) {
     console.log("___________________________________________________________________");
     console.log(">>>I heard a client request");
     console.log("\n>>>HEADERS: ", req.headers);
