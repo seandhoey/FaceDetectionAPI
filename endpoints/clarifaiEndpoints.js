@@ -4,7 +4,7 @@
 export async function postClarifaiFaceDetection(req, res) {
   console.log("\n>>>BODY: ", req.body);
   const { url, height, width } = req.body;
-  const CLARIFAIURL = "https://api.clarifai.com/v2/models/face-detection/outputs";
+  const CLARIFAIURL = process.env.CLARIFAI_URL;
   try {
     const response = await fetch(CLARIFAIURL, generateClarifaiRequest(url));
     const jsonResponse = await response.json();
@@ -22,9 +22,9 @@ export async function postClarifaiFaceDetection(req, res) {
 
 // Given a URL and the static config, generates a requestOptions object, used in the fetch API
 function generateClarifaiRequest(url) {
-  const PAT_KEY = '450fdb8a850148248a9815d0e41dc6ae';
-  const USER_ID = 'nmvision';
-  const APP_ID = 'FaceDetection';
+  const PAT_KEY = process.env.CLARIFAI_PATKEY;
+  const USER_ID = process.env.CLARIFAI_USERID;
+  const APP_ID = process.env.CLARIFAI_APPID;
 
   return {
     method: 'POST',

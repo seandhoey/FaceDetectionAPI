@@ -6,19 +6,19 @@ import userEndpoints from './endpoints/userEndpoints.js'
 import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
 
 // Server Configuration
-const TESTING = false;
+const PRODUCTION = process.env.PRODUCTION;
 // If a port is passed in, use that instead of 3001
-let PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-if (TESTING) app.use(cors());
+if (!PRODUCTION) app.use(cors());
 app.listen(PORT, () => {
   console.log("Server is listening on port " + PORT);
 });
 
 // Database Connection
-const db = TESTING
+const db = !PRODUCTION
 ? knex({
   client: 'pg',
   connection: {
@@ -44,7 +44,7 @@ const db = TESTING
 
 // Verbose logger for testing
 app.use((req, res, next) => {
-  if (TESTING) {
+  if (!PRODUCTION) {
     console.log("___________________________________________________________________");
     console.log(">>>I heard a client request");
     console.log("\n>>>HEADERS: ", req.headers);
