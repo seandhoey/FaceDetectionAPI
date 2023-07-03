@@ -4,6 +4,10 @@ export function getAllUsers(req, res, db) {
   db.select('name', 'email').from('users').then(users => {
     console.log("\n>>>EXISTING USERS:", users);
     res.status(200).send(users);
+  })
+  .catch(err => {
+    console.log("\n>>>ERROR: ", err);
+    res.status(404).json('Query error')
   });
 }
 

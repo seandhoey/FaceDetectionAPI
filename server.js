@@ -6,7 +6,7 @@ import userEndpoints from './endpoints/userEndpoints.js'
 import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
 
 // Server Configuration
-const TESTING = true;
+const TESTING = false;
 // If a port is passed in, use that instead of 3001
 let PORT = process.env.PORT || 3001;
 const app = express();
@@ -18,14 +18,27 @@ app.listen(PORT, () => {
 });
 
 // Database Connection
-const db = knex({
+const db = TESTING
+? knex({
   client: 'pg',
   connection: {
-    host: '127.0.0.1', //localhost
-    user: 'postgres', //default user
-    port: 5432, //default port
-    password: 'brainiac', //should this be here in plain text?
+    host: '127.0.0.1',
+    user: 'postgres',
+    port: 5432,
+    password: 'brainiac',
     database: 'facedetect'
+  }
+})
+: knex({
+  client: 'pg',
+  connection: {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    port: process.env.DATABASE_PORT,
+    password: process.env.DATABASE_PW,
+    database: process.env.DATABASE_DB
   }
 });
 
