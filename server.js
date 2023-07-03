@@ -7,7 +7,8 @@ import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
 
 // Server Configuration
 const TESTING = true;
-const PORT = 3001;
+// If a port is passed in, use that instead of 3001
+let PORT = process.env.PORT || 3001;
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
