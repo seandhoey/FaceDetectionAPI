@@ -5,8 +5,10 @@ export async function postClarifaiFaceDetection(req, res) {
   console.log("\n>>>BODY: ", req.body);
   const { url, height, width } = req.body;
   const CLARIFAIURL = process.env.CLARIFAI_URL;
+  const CLARIFAIREQUEST = generateClarifaiRequest(url);
   try {
-    const response = await fetch(CLARIFAIURL, generateClarifaiRequest(url));
+    console.log(CLARIFAIURL + "/n" + CLARIFAIREQUEST);
+    const response = await fetch(CLARIFAIURL, CLARIFAIREQUEST);
     console.log('response', response);
     const jsonResponse = await response.json();
 
