@@ -1,13 +1,13 @@
 // Clarifai API moved from client to server to hide API key etc.
 // Calls Clarifai face-detection API. Parses output response. 
 // Calculates Bounding Box and sends back to client.
-export async function postClarifaiFaceDetection(req, res) {
+export async function postClarifaiFaceDetection(req, res, nodeFetch) {
   console.log("\n>>>BODY: ", req.body);
   const { url, height, width } = req.body;
   const CLARIFAIURL = process.env.CLARIFAI_URL;
   const CLARIFAIREQUEST = generateClarifaiRequest(url);
   try {
-    const response = await fetch(CLARIFAIURL, CLARIFAIREQUEST);
+    const response = await nodeFetch(CLARIFAIURL, CLARIFAIREQUEST);
     const jsonResponse = await response.json();
 
     // For all bounding boxes found in the json, convert them into calculated objects and put into array

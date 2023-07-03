@@ -5,6 +5,7 @@ import knex from 'knex';
 import userEndpoints from './endpoints/userEndpoints.js'
 import clarifaiEndpoints from './endpoints/clarifaiEndpoints.js'
 import dotenv from 'dotenv'
+import nodeFetch from "node-fetch";
 
 // Server Configuration
 dotenv.config();
@@ -70,4 +71,4 @@ app.post('/signin', (req, res) => { userEndpoints.postAuthenticateUser(req, res,
 app.post('/register', (req, res) => { userEndpoints.postRegisterUser(req, res, db, bcrypt); });
 
 // Clarifai Endpoints
-app.post('/facedetect', (req, res) => { clarifaiEndpoints.postClarifaiFaceDetection(req, res); });
+app.post('/facedetect', (req, res) => { clarifaiEndpoints.postClarifaiFaceDetection(req, res, nodeFetch); });
